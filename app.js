@@ -2,13 +2,7 @@
    TimeFlies — app.js
    ============================================================ */
 
-// ── STORE ────────────────────────────────────────────────────
-const DB = {
-  get users()   { return JSON.parse(localStorage.getItem('tf_users')   || '[]'); },
-  get clients() { return JSON.parse(localStorage.getItem('tf_clients') || '[]'); },
-  get entries() { return JSON.parse(localStorage.getItem('tf_entries') || '[]'); },
-  save(key, val) { localStorage.setItem('tf_' + key, JSON.stringify(val)); },
-};
+// DB es provisto por firebase.js como window.DB
 
 const COLORS = ['#4f6ef7','#e74c8b','#27ae60','#f39c12','#8e44ad','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c'];
 
@@ -75,14 +69,25 @@ function toast(msg, type = '') {
   t._timer = setTimeout(() => t.classList.add('hidden'), 2800);
 }
 
-// ── INIT ─────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── INIT — llamado por firebase.js cuando DOM + datos listos ──
+window.startApp = function () {
   clearDummyData();
   renderLoginScreen();
   bindGlobalEvents();
   initMiniTimerDrag();
   initBroadcastChannel();
-});
+};
+
+// Re-renderiza cuando otro dispositivo cambia datos en Firestore
+window.onFirebaseUpdate = function (key) {
+  if (!currentUser) return;
+  renderLoginScreen();
+  const active = document.querySelector('.view.active')?.id;
+  if (active === 'view-dashboard') renderDashboard();
+  if (active === 'view-entries')   applyEntriesFilter();
+  if (active === 'view-clients')   renderClientsView();
+  if (active === 'view-reports')   generateReport();
+};
 
 // ── LOGIN ────────────────────────────────────────────────────
 function renderLoginScreen() {
