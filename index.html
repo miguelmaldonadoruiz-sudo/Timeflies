@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimeFlies — Control de Horas</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login-screen" class="screen active">
+  <div class="login-container">
+    <div class="login-logo">
+      <div class="logo-icon">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="28" cy="28" r="24" stroke="white" stroke-width="2.5" stroke-opacity="0.9"/>
+          <circle cx="28" cy="28" r="2.5" fill="white"/>
+          <line x1="28" y1="28" x2="28" y2="13" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="28" y1="28" x2="38" y2="34" stroke="white" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>
+          <circle cx="28" cy="10" r="1.5" fill="white" fill-opacity="0.4"/>
+          <circle cx="28" cy="46" r="1.5" fill="white" fill-opacity="0.4"/>
+          <circle cx="10" cy="28" r="1.5" fill="white" fill-opacity="0.4"/>
+          <circle cx="46" cy="28" r="1.5" fill="white" fill-opacity="0.4"/>
+        </svg>
+      </div>
+      <h1>TimeFlies</h1>
+      <p>Control profesional de horas</p>
+    </div>
+    <div class="user-grid" id="user-grid"></div>
+    <div class="login-footer">
+      <button class="btn-ghost" id="btn-new-user">+ Nuevo usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL NUEVO USUARIO ========== -->
+<div id="modal-user" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Nuevo Usuario</h3>
+      <button class="modal-close" data-close="modal-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="new-user-name" placeholder="Ej: María González" />
+      </div>
+      <div class="form-group">
+        <label>Cargo</label>
+        <input type="text" id="new-user-role" placeholder="Ej: Abogada Senior" />
+      </div>
+      <div class="form-group">
+        <label>Tarifa por hora (USD)</label>
+        <input type="number" id="new-user-rate" placeholder="150" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Color de perfil</label>
+        <div class="color-picker" id="user-color-picker"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-close="modal-user">Cancelar</button>
+      <button class="btn-primary" id="btn-save-user">Crear usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== APP PRINCIPAL ========== -->
+<div id="app-screen" class="screen">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-sm">
+        <svg width="18" height="18" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="28" cy="28" r="24" stroke="white" stroke-width="3" stroke-opacity="0.9"/>
+          <circle cx="28" cy="28" r="3" fill="white"/>
+          <line x1="28" y1="28" x2="28" y2="13" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <line x1="28" y1="28" x2="38" y2="34" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.7"/>
+        </svg>
+        <span>TimeFlies</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">⏱</span><span>Timer</span>
+      </a>
+      <a href="#" class="nav-item" data-view="entries">
+        <span class="nav-icon">📋</span><span>Registros</span>
+      </a>
+      <a href="#" class="nav-item" data-view="clients">
+        <span class="nav-icon">👥</span><span>Clientes</span>
+      </a>
+      <a href="#" class="nav-item" data-view="reports">
+        <span class="nav-icon">📊</span><span>Reportes</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="current-user-card" id="sidebar-user"></div>
+      <button class="btn-logout" id="btn-logout">← Salir</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- VIEW: DASHBOARD / TIMER -->
+    <div id="view-dashboard" class="view active">
+      <div class="view-header">
+        <h2>Timer</h2>
+        <span class="today-label" id="today-label"></span>
+      </div>
+
+      <!-- TIMER CARD -->
+      <div class="timer-card">
+        <div class="timer-display" id="timer-display">00:00:00</div>
+        <div class="timer-form">
+          <div class="timer-row">
+            <select id="timer-client" class="select-styled">
+              <option value="">— Seleccionar cliente —</option>
+            </select>
+            <select id="timer-matter" class="select-styled">
+              <option value="">— Asunto / Expediente —</option>
+            </select>
+          </div>
+          <div class="timer-row">
+            <input type="text" id="timer-desc" class="input-styled" placeholder="Descripción de la actividad…" />
+            <label class="toggle-label">
+              <input type="checkbox" id="timer-billable" checked />
+              <span class="toggle-text">Facturable</span>
+            </label>
+          </div>
+        </div>
+        <div class="timer-controls">
+          <button class="btn-timer-start" id="btn-timer-start">▶ Iniciar</button>
+          <button class="btn-timer-stop hidden" id="btn-timer-stop">⏹ Detener y Guardar</button>
+          <button class="btn-secondary" id="btn-manual-entry">+ Entrada manual</button>
+          <button class="btn-popup" id="btn-open-popup" title="Abrir ventana flotante independiente">⧉ Ventana flotante</button>
+        </div>
+      </div>
+
+      <!-- TODAY ENTRIES -->
+      <div class="section-header">
+        <h3>Hoy</h3>
+        <span class="today-total" id="today-total">0:00 h</span>
+      </div>
+      <div class="entries-list" id="today-entries"></div>
+    </div>
+
+    <!-- VIEW: REGISTROS -->
+    <div id="view-entries" class="view">
+      <div class="view-header">
+        <h2>Todos los Registros</h2>
+        <div class="header-actions">
+          <input type="date" id="filter-date-from" class="input-sm" />
+          <span>→</span>
+          <input type="date" id="filter-date-to" class="input-sm" />
+          <select id="filter-client" class="select-sm">
+            <option value="">Todos los clientes</option>
+          </select>
+          <button class="btn-primary btn-sm" id="btn-apply-filter">Filtrar</button>
+        </div>
+      </div>
+      <div class="entries-table-wrapper">
+        <table class="entries-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Cliente</th>
+              <th>Asunto</th>
+              <th>Descripción</th>
+              <th>Duración</th>
+              <th>Facturable</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entries-tbody"></tbody>
+        </table>
+        <div class="empty-state hidden" id="entries-empty">No hay registros para mostrar.</div>
+      </div>
+    </div>
+
+    <!-- VIEW: CLIENTES -->
+    <div id="view-clients" class="view">
+      <div class="view-header">
+        <h2>Clientes</h2>
+        <button class="btn-primary" id="btn-new-client">+ Nuevo cliente</button>
+      </div>
+      <div class="clients-grid" id="clients-grid"></div>
+    </div>
+
+    <!-- VIEW: REPORTES -->
+    <div id="view-reports" class="view">
+      <div class="view-header">
+        <h2>Reportes</h2>
+        <div class="header-actions">
+          <select id="report-period" class="select-sm">
+            <option value="week">Esta semana</option>
+            <option value="month" selected>Este mes</option>
+            <option value="quarter">Este trimestre</option>
+            <option value="custom">Personalizado</option>
+          </select>
+          <input type="date" id="report-from" class="input-sm hidden" />
+          <input type="date" id="report-to" class="input-sm hidden" />
+          <select id="report-user" class="select-sm">
+            <option value="">Todos los usuarios</option>
+          </select>
+          <button class="btn-primary btn-sm" id="btn-generate-report">Generar</button>
+          <button class="btn-secondary btn-sm" id="btn-export-csv">⬇ CSV</button>
+          <button class="btn-secondary btn-sm" id="btn-export-pdf">⬇ PDF</button>
+          <button class="btn-secondary btn-sm" id="btn-export-word">⬇ Word</button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h4>Horas por cliente</h4>
+          <div class="bar-chart" id="chart-clients"></div>
+        </div>
+        <div class="chart-card">
+          <h4>Horas por día</h4>
+          <div class="bar-chart" id="chart-days"></div>
+        </div>
+      </div>
+
+      <!-- REPORT TABLE -->
+      <div class="report-table-wrapper">
+        <h4>Detalle por cliente</h4>
+        <table class="entries-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Asunto</th>
+              <th>Horas</th>
+              <th>Facturable</th>
+              <th>Tarifa</th>
+              <th>Total estimado</th>
+            </tr>
+          </thead>
+          <tbody id="report-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ========== MODAL NUEVO CLIENTE ========== -->
+<div id="modal-client" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-client-title">Nuevo Cliente</h3>
+      <button class="modal-close" data-close="modal-client">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre / Razón social</label>
+          <input type="text" id="client-name" placeholder="Ej: Empresa ABC S.A." />
+        </div>
+        <div class="form-group">
+          <label>Contacto</label>
+          <input type="text" id="client-contact" placeholder="Ej: Juan Pérez" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="client-email" placeholder="cliente@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Tarifa por hora (USD)</label>
+          <input type="number" id="client-rate" placeholder="200" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Asuntos / Expedientes</label>
+        <div class="matters-list" id="matters-list"></div>
+        <div class="matters-add">
+          <input type="text" id="new-matter-input" placeholder="Nuevo asunto…" />
+          <button class="btn-secondary btn-sm" id="btn-add-matter">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-close="modal-client">Cancelar</button>
+      <button class="btn-primary" id="btn-save-client">Guardar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL ENTRADA MANUAL ========== -->
+<div id="modal-manual" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Entrada manual</h3>
+      <button class="modal-close" data-close="modal-manual">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="manual-date" />
+        </div>
+        <div class="form-group">
+          <label>Duración (hh:mm)</label>
+          <input type="text" id="manual-duration" placeholder="1:30" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cliente</label>
+          <select id="manual-client" class="select-styled"></select>
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <select id="manual-matter" class="select-styled"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea id="manual-desc" placeholder="Descripción de la actividad…" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="toggle-label">
+          <input type="checkbox" id="manual-billable" checked />
+          <span class="toggle-text">Facturable</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" data-close="modal-manual">Cancelar</button>
+      <button class="btn-primary" id="btn-save-manual">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL EDITAR ENTRADA ========== -->
+<div id="modal-edit-entry" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Editar registro</h3>
+      <button class="modal-close" data-close="modal-edit-entry">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-entry-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="edit-date" />
+        </div>
+        <div class="form-group">
+          <label>Duración (hh:mm)</label>
+          <input type="text" id="edit-duration" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cliente</label>
+          <select id="edit-client" class="select-styled"></select>
+        </div>
+        <div class="form-group">
+          <label>Asunto</label>
+          <select id="edit-matter" class="select-styled"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea id="edit-desc" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="toggle-label">
+          <input type="checkbox" id="edit-billable" />
+          <span class="toggle-text">Facturable</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger btn-sm" id="btn-delete-entry">Eliminar</button>
+      <div style="flex:1"></div>
+      <button class="btn-secondary" data-close="modal-edit-entry">Cancelar</button>
+      <button class="btn-primary" id="btn-update-entry">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- ========== MINI TIMER FLOTANTE ========== -->
+<div id="mini-timer" class="mini-timer hidden">
+  <div class="mini-timer-drag" id="mini-timer-drag">
+    <div class="mini-timer-dot" id="mini-timer-dot"></div>
+    <div class="mini-timer-info">
+      <div class="mini-timer-time" id="mini-timer-time">00:00:00</div>
+      <div class="mini-timer-client" id="mini-timer-client">Sin cliente</div>
+    </div>
+  </div>
+  <div class="mini-timer-actions">
+    <button class="mini-btn-stop" id="mini-btn-stop" title="Detener y guardar">⏹</button>
+    <button class="mini-btn-expand" id="mini-btn-expand" title="Ir al timer">↗</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>TimeFlies — Timer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f1523;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 16px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .logo { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.5); flex: 1; }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #9ba3be; flex-shrink: 0;
+      transition: background .3s;
+    }
+    .status-dot.running {
+      background: #00c896;
+      box-shadow: 0 0 0 3px rgba(0,200,150,.25);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 3px rgba(0,200,150,.2); }
+      50%      { box-shadow: 0 0 0 7px rgba(0,200,150,.07); }
+    }
+
+    .timer-display {
+      font-size: 38px;
+      font-weight: 300;
+      letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      line-height: 1;
+      transition: color .3s;
+    }
+    .timer-display.running { color: #00c896; }
+
+    .client-label {
+      font-size: 11px;
+      color: rgba(255,255,255,.4);
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px; font-weight: 600;
+      border-radius: 8px; padding: 8px 14px;
+      transition: all .15s;
+    }
+    #btn-stop {
+      background: rgba(255,77,109,.2);
+      color: #ff4d6d;
+    }
+    #btn-stop:hover { background: rgba(255,77,109,.4); }
+    #btn-stop:disabled { opacity: .3; cursor: not-allowed; }
+
+    #btn-start {
+      background: rgba(0,200,150,.2);
+      color: #00c896;
+    }
+    #btn-start:hover { background: rgba(0,200,150,.35); }
+
+    #btn-reset {
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,.5);
+    }
+    #btn-reset:hover { background: rgba(255,255,255,.13); color: #fff; }
+
+    .desc-input {
+      width: 100%;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,.7);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .desc-input::placeholder { color: rgba(255,255,255,.25); }
+    .desc-input:focus { border-color: rgba(79,110,247,.6); }
+
+    .saved-msg {
+      font-size: 11px;
+      color: #00c896;
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .saved-msg.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <span class="logo">
+      <svg width="14" height="14" viewBox="0 0 56 56" fill="none" style="vertical-align:middle;margin-right:5px">
+        <circle cx="28" cy="28" r="24" stroke="white" stroke-width="3" stroke-opacity="0.8"/>
+        <circle cx="28" cy="28" r="3" fill="white"/>
+        <line x1="28" y1="28" x2="28" y2="13" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <line x1="28" y1="28" x2="38" y2="34" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.7"/>
+      </svg>TimeFlies</span>
+    <div class="status-dot" id="status-dot"></div>
+  </div>
+
+  <div class="timer-display" id="timer-display">00:00:00</div>
+  <div class="client-label" id="client-label">Sin timer activo</div>
+
+  <input class="desc-input" id="desc-input" placeholder="Descripción de la actividad…" />
+
+  <div class="controls">
+    <button id="btn-start">▶ Iniciar</button>
+    <button id="btn-stop" disabled>⏹ Guardar</button>
+    <button id="btn-reset">↺ Reset</button>
+  </div>
+
+  <div class="saved-msg" id="saved-msg">✓ Registro guardado</div>
+
+<script>
+  const ch = new BroadcastChannel('timeflies-timer');
+  const display   = document.getElementById('timer-display');
+  const dot       = document.getElementById('status-dot');
+  const clientLbl = document.getElementById('client-label');
+  const descInput = document.getElementById('desc-input');
+  const btnStop   = document.getElementById('btn-stop');
+  const btnStart  = document.getElementById('btn-start');
+  const btnReset  = document.getElementById('btn-reset');
+  const savedMsg  = document.getElementById('saved-msg');
+
+  let running = false;
+
+  ch.onmessage = ({ data }) => {
+    if (data.type === 'tick') {
+      display.textContent = data.time;
+      clientLbl.textContent = data.client || 'Sin cliente';
+      setRunning(true);
+    }
+    if (data.type === 'stopped') {
+      display.textContent = '00:00:00';
+      clientLbl.textContent = 'Sin timer activo';
+      setRunning(false);
+      showSaved();
+    }
+    if (data.type === 'state') {
+      display.textContent = data.time || '00:00:00';
+      clientLbl.textContent = data.client || 'Sin timer activo';
+      setRunning(data.running);
+    }
+  };
+
+  function setRunning(val) {
+    running = val;
+    display.classList.toggle('running', val);
+    dot.classList.toggle('running', val);
+    btnStop.disabled  = !val;
+    btnStart.disabled = val;
+    btnStart.style.opacity = val ? '.4' : '1';
+  }
+
+  function showSaved() {
+    savedMsg.classList.add('show');
+    setTimeout(() => savedMsg.classList.remove('show'), 2500);
+  }
+
+  btnStop.addEventListener('click', () => {
+    const desc = descInput.value.trim();
+    ch.postMessage({ type: 'cmd-stop', desc });
+    descInput.value = '';
+  });
+
+  btnStart.addEventListener('click', () => {
+    ch.postMessage({ type: 'cmd-start' });
+  });
+
+  btnReset.addEventListener('click', () => {
+    ch.postMessage({ type: 'cmd-reset' });
+    display.textContent = '00:00:00';
+    setRunning(false);
+  });
+
+  // Al abrir, pedir estado actual
+  ch.postMessage({ type: 'request-state' });
+</script>
+</body>
+</html>
